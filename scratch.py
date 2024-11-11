@@ -14,7 +14,29 @@ import pandas as pd
 class ArtDataset(Dataset):
     def __init__(self):
         # data loading
-        xy = pd.read_csv('art.csv')
+        # Step 1: Load the CSV with proper settings
+        xy = pd.read_csv(
+            'art.csv',
+            header=0,  # The first row contains column names
+            quotechar='"',  # Use double quotes as the text qualifier
+            skipinitialspace=True  # Skip spaces after delimiters
+        )
+
+        # Step 2: Remove rows containing "bottle" or "bottles" in any column
+        xy = xy[~xy.apply(lambda row: row.astype(str).str.contains('bottle', case=False, na=False).any(), axis=1)]
+
+        # Step 3: Drop rows where the 'Date' column is empty, NaN, or only spaces
+        xy = xy[xy['Date'].str.strip().replace('', pd.NA).notna()]
+
+        # Step 4: Drop rows where the 'Price' column is empty, NaN, or only spaces
+        xy = xy[xy['Price'].str.strip().replace('', pd.NA).notna()]
+
+        # Step 5: Reset index for cleanliness
+        xy.reset_index(drop=True, inplace=True)
+
+        # Step 6: Print the cleaned DataFrame
+        pd.set_option('display.max_columns', None)
+        print(xy.head())
 
         array = xy.to_numpy()
         print(array[0][0])
