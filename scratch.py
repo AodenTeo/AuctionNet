@@ -1,5 +1,4 @@
 import torch
-import torchvision
 from torch.utils.data import Dataset, DataLoader
 import math
 import torch.nn as nn
@@ -9,7 +8,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import pandas as pd
+# Import the desired functions and classes from model.py
+from model import create_vocab_csv, ArtPricePredictor
 
+vocab_artist = create_vocab_csv('art.csv', "Artist")
+vocab_title = create_vocab_csv('art.csv', "Title")
 
 # Process the dataset from the file art.csv
 class ArtDataset(Dataset):
@@ -189,7 +192,7 @@ class ArtDataset(Dataset):
         # print("Unique prefixes in the 'Estimate' column:", unique_prefixes)
 
         array = xy.to_numpy()
-        print(array[0][0])
+        print(array[0])
 
     def __getitem__(self, index):
         return index

@@ -3,6 +3,7 @@ import torch.nn as nn
 from torchtext.data.utils import get_tokenizer
 from collections import Counter
 from torchtext.vocab import Vocab
+import csv
 
 # function: tokenize
 # ---------------------------------------
@@ -36,6 +37,42 @@ def create_vocab(text):
     vocab.unk_index = vocab['<unk>']
     return vocab
 
+# function: create_vocab_csv
+# ---------------------------------------------------
+# creates a vocabulary object out a column of a csv file
+#
+# @param file Path to the CSV file that we want to extract
+#
+# @param column_name String representing the column name
+# for which we want to form a vocabulary
+#
+# @returns torchtext vocabulary object representing the vocabulary
+# present in the string
+def create_vocab_csv(file_path, column_name):
+    # Open the CSV file
+    with open(file_path, 'r') as file:
+        # Create a CSV reader object
+        reader = csv.reader(file)
+
+        # Extract the header row
+        header = next(reader)
+
+        # Find the index of the desired column
+        column_index = header.index(column_name)
+
+        # Extract the values of the desired column
+        text = [row[column_index] for row in reader]
+
+    tokenized_text = tokenize(text)
+    counter = Counter([word for sentence in tokenized_text for word in sentence])
+    vocab = Vocab(counter, min_freq=1)
+    print(counter)
+
+    # Set the default index for unknown tokens (if the token hasn't appeared before, we automatically set it
+    # to this index)
+    vocab.unk_index = vocab['<unk>']
+    return vocab
+create_vocab_csv('art.csv', "Artist")
 
 # function: text_to_tensor
 # -------------------------------------
