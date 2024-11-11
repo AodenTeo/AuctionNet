@@ -15,7 +15,9 @@ class ArtDataset(Dataset):
     def __init__(self):
         # data loading
         xy = pd.read_csv('art.csv')
-        print(xy)
+
+        array = xy.to_numpy()
+        print(array[0][0])
 
     def __getitem__(self, index):
         return index
