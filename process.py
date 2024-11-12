@@ -5,6 +5,7 @@
 
 import pandas as pd
 import numpy as np
+import sys
 
 # Step 1: Load the CSV with proper settings
 xy = pd.read_csv(
@@ -16,12 +17,14 @@ xy = pd.read_csv(
 
 # Step 2: Remove rows containing "bottle" or "bottles" in any column
 xy = xy[~xy.apply(lambda row: row.astype(str).str.contains('bottle', case=False, na=False).any(), axis=1)]
-
+print('Length after removing wine: ', len(xy))
 # Step 3: Drop rows where the 'Date' column is empty, NaN, or only spaces
 xy = xy[xy['Date'].str.strip().replace('', pd.NA).notna()]
+print('Length after removing no dates ', len(xy))
 
 # Step 4: Drop rows where the 'Price' column is empty, NaN, or only spaces
 xy = xy[xy['Price'].str.strip().replace('', pd.NA).notna()]
+print('Length after removing no price ', len(xy))
 
 # Step 5: Remove commas from the 'Estimate' and 'Price' columns
 xy['Estimate'] = xy['Estimate'].str.replace(',', '', regex=False)
@@ -121,11 +124,8 @@ def convert_to_usd(row):
     return row
 
 
-# WE ONLY HAVE EXCHANGE RATES FROM 2009 ONWARDS,
-# so drop rows where the year in the 'End Date' column is less than 2009
-#xy = xy[xy['End Date'].str[:4].astype(int) >= 2009]
 # Drop rows where the year is 2024 or greater and the month is greater than 10
-xy  = xy[~((xy['End Date'].str[:4].astype(int) >= 2024) & (xy['End Date'].str[5:7].astype(int) > 10))]
+xy = xy[~((xy['End Date'].str[:4].astype(int) >= 2024) & (xy['End Date'].str[5:7].astype(int) > 10))]
 
 # Apply the function to create the new columns in the DataFrame
 xy = xy.apply(convert_to_usd, axis=1)
@@ -425,6 +425,7 @@ xy.reset_index(drop=True, inplace=True)
 pd.set_option('display.max_columns', None)
 #print(xy.columns)
 #print(xy.head())
+print(xy.iloc[749])
 
 ########################
 # Step 15: Select relevant columns for final output
@@ -450,5 +451,5 @@ clean_art[columns_to_convert] = clean_art[columns_to_convert].astype(float)
 # Drop rows with any NaN values in any column
 #clean_art = clean_art.dropna()
 
-# Write the clean_art dataframe to the existing CSV file
+# Write all data to a csv file
 clean_art.to_csv('clean_art.csv', index=False)
