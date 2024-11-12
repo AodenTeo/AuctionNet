@@ -40,7 +40,8 @@ month_mapping = {
 xy['End Date'] = xy['Date'].str[-8:].str.strip().apply(
     lambda x: f"{x[-4:]}-{month_mapping.get(x[:3], '00')}"
 )
-
+#
+print(f'The entry that gets taken to NAN is:  {xy.iloc[749]}')
 ########################
 # Step 6: Convert estimates and prices to nominal USD
 # Load the FRB_H10.csv exchange rates data
@@ -74,6 +75,29 @@ xy['Currency'] = xy['Price'].str[:3]  # Get the first 3 characters as the curren
 def convert_to_usd(row):
     currency = row['Currency']
     end_date = row['End Date']
+
+    # Handle USD directly: if currency is USD, no conversion is needed
+    if currency == 'USD':
+        # Remove 'USD' prefix and convert to float
+        price = row['Price'].strip()
+        price_usd = float(price[4:])  # Assume 'USD 667', so we take from index 4 onward
+        row['Nominal Price USD'] = price_usd
+
+        # Process estimate if it exists
+        estimate = row['Estimate'].strip()
+        if " - " in estimate:
+            # Extract lower and upper bounds from the estimate range
+            estimate_range = estimate[4:].split(" - ")
+            lb = float(estimate_range[0])
+            ub = float(estimate_range[1])
+            row['Nominal LB Estimate USD'] = lb
+            row['Nominal UB Estimate USD'] = ub
+        else:
+            # If there's no range, set LB and UB to the same value as the price
+            row['Nominal LB Estimate USD'] = price_usd
+            row['Nominal UB Estimate USD'] = price_usd
+
+        return row
 
     # If currency is not in the list of supported currencies, return missing value
     if currency not in currency_codes:
@@ -124,6 +148,7 @@ def convert_to_usd(row):
     return row
 
 
+print(f'After conversion to USD: {xy.iloc[749]}')
 # Drop rows where the year is 2024 or greater and the month is greater than 10
 xy = xy[~((xy['End Date'].str[:4].astype(int) >= 2024) & (xy['End Date'].str[5:7].astype(int) > 10))]
 
@@ -361,6 +386,7 @@ def get_real_gdp_growth(end_date):
     return None
 
 
+print(f'Before mapping the end date to the corresponding DGS10 value: {xy.iloc[749]}')
 # Apply the function to get 'Real GDP Growth Rate' and add it to the 'xy' DataFrame
 xy['Real GDP Growth Rate'] = xy['End Date'].apply(get_real_gdp_growth)
 ########################
@@ -382,12 +408,12 @@ securities['DATE'] = pd.to_datetime(securities['DATE']).dt.strftime('%Y-%m')
 
 # Create a dictionary for the date to DGS10 mapping (using string dates)
 date_to_yield = pd.Series(securities['DGS10'].values, index=securities['DATE']).to_dict()
-
+print(f'Before mapping the end date to the corresponding DGS10 value: {xy.iloc[749]}')
 # Map the 'End Date' in xy to the corresponding 'DGS10' value using the dictionary
 xy['Nominal Securities Yield'] = xy['End Date'].map(date_to_yield)
 
 xy['Inflation'] = pd.to_numeric(xy['Inflation'], errors='coerce')
-
+print(f'Before calculating real securities Yield: {xy.iloc[749]}')
 # Calculate the 'Real Securities Yield' using the Fisher equation
 xy['Real Securities Yield'] = ((1 + xy['Nominal Securities Yield']) / (1 + xy['Inflation'])) - 1
 
@@ -402,15 +428,16 @@ gini = pd.read_csv(
 # Clean the 'DATE' column by removing the last six characters to get 'YYYY' format
 gini['DATE'] = gini['DATE'].str[:-6]
 
+print(f'Before ensuring End Date is in YYYY format: {xy.iloc[749]}')
 # Ensure 'End Date' in xy is in 'YYYY' format (extract the year)
 xy['Year'] = xy['End Date'].str[:4]
 
 # Create a dictionary for mapping years to Gini coefficient values
 year_to_gini = pd.Series(gini['SIPOVGINIUSA'].values, index=gini['DATE']).to_dict()
-
+print(f'Before adding the Gini Coefficient: {xy.iloc[749]}')
 # Map the 'Year' in xy to the corresponding Gini coefficient value using the dictionary
 xy['Gini Coefficient'] = xy['Year'].map(year_to_gini)
-
+print(f'Before splitting the month and year: {xy.iloc[749]}')
 ########################
 # Step 14: Split end date into month and year
 # Create new 'Month' and 'Year' columns
@@ -450,6 +477,21 @@ clean_art[columns_to_convert] = clean_art[columns_to_convert].astype(float)
 
 # Drop rows with any NaN values in any column
 #clean_art = clean_art.dropna()
+# (1) Remove any rows with missing entries in specified columns
+clean_art.dropna(subset=['Artist', 'Title', 'Year', 'Month', 'CPI', 'Inflation',
+                         'Real Fed Funds', 'Scaled NASDAQ', 'Scaled UMCSENT',
+                         'GDP Index', 'Real GDP Growth Rate', 'Real Securities Yield',
+                         'Gini Coefficient', 'Real LB Estimate USD',
+                         'Real UB Estimate USD', 'Real Price USD'], inplace=True)
+
+# (2) Reorder columns to match the desired order
+clean_art = clean_art[['Artist', 'Title', 'Year', 'Month', 'CPI', 'Inflation',
+                       'Real Fed Funds', 'Scaled NASDAQ', 'Scaled UMCSENT',
+                       'GDP Index', 'Real GDP Growth Rate', 'Real Securities Yield',
+                       'Gini Coefficient', 'Real LB Estimate USD', 'Real UB Estimate USD',
+                       'Real Price USD']]
+
+print(f'Number of cleaned art samples at the end: {len(clean_art)}')
 
 # Write all data to a csv file
 clean_art.to_csv('clean_art.csv', index=False)

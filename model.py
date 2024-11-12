@@ -4,6 +4,7 @@ from torchtext.data.utils import get_tokenizer
 from collections import Counter
 from torchtext.vocab import Vocab
 import csv
+import pandas as pd
 
 # function: tokenize
 # ---------------------------------------
@@ -64,9 +65,9 @@ def create_vocab_csv(file_path, column_name):
         text = [row[column_index] for row in reader]
 
     tokenized_text = tokenize(text)
+    print(tokenized_text)
     counter = Counter([word for sentence in tokenized_text for word in sentence])
     vocab = Vocab(counter, min_freq=1)
-    print(counter)
 
     # Set the default index for unknown tokens (if the token hasn't appeared before, we automatically set it
     # to this index)
@@ -108,11 +109,18 @@ print(f'The tokenized artists become: {tokenized_artists}')
 
 
 # Builds a vocabulary out of all the words that appear in the training set
-vocab_artists = create_vocab(artists)
-vocab_titles = create_vocab(titles)
+vocab_artists = create_vocab_csv("test.csv", "Artist")
+vocab_titles = create_vocab_csv("test.csv", "Title")
 
 # Convert tokens to indices and pad sequences
 max_len = 20  # set a max length to handle long titles
+
+xy = pd.read_csv(
+    'test.csv',
+    header=0,  # The first row contains column names
+    quotechar='"',  # Use double quotes as the text qualifier
+    skipinitialspace=True  # Skip spaces after delimiters
+)
 
 artist_tensor = text_to_tensor(artists, vocab_artists, max_len)
 title_tensor = text_to_tensor(titles, vocab_titles, max_len)
