@@ -85,4 +85,6 @@ The program consists of three main files described below:
 
   + File to which our most successful model weights are saved
 
++ **glove.6B.50d.txt**: Stanford NLP's pre-trained word embeddings, available at: https://nlp.stanford.edu/projects/glove/
+
   
