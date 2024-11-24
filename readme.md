@@ -6,7 +6,7 @@ The program consists of three main files described below:
 
   + Prepares the economic data to add to the training set, as well as normalizes all prices to be in *real USD*. It writes all of this updated data to clean_art.csv. None of these functions are called anywhere else. 
 
-+ **model.py**: (*alert:* MISLEADING NAME - should be called stringproc.py)
++ **stringproc.py**
 
   + Contains helper functions for string processing, and vocabulary building (building a dictionary of words that appear in the dataset). The important functions are: 
 
@@ -56,7 +56,7 @@ The program consists of three main files described below:
         tensor([[1.0, 5.0, 3.0, ...], ...]) # where "Hello" is the first word in the vocabulary, "my" is the fifth word in the vocabulary,... 
         ```
 
-+ **scratch.py**: (*alert*: MISLEADING NAME - should be named dataload.py)
++ **dataload.py**
 
   + Creates a PyTorch dataset object (which can be used to represent datasets later in code) called ArtDataset, which loads in data from the CSV file, does some final preprocessing (replaces each string with its distance from the word museum) and sets some attributes of the dataset object, listed below
     + dataset.vocab_artist: vocab object representing the vocabulary used in the artist column
