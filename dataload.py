@@ -37,7 +37,7 @@ def cosine_similarity(vec1, vec2):
     return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
 # Load the downloaded Glove embeddings 
-glove_path = "glove.6B.50d.txt"
+glove_path = "Glove/glove.6B.50d.txt"
 embedding_dim = 50
 glove_embeddings = load_glove_embeddings(glove_path, embedding_dim)
 # Define function to calculate average cosine similarity
