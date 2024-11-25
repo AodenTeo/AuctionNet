@@ -86,12 +86,10 @@ class ArtDataset(Dataset):
         print("Dataset loaded successfully!")
 
     def __getitem__(self, index):
-        return self.x[index], self.price[index]
+        return self.artist[index], self.artist_seg_ids[index], self.price[index]
 
     def __len__(self):
         return self.title.shape[0]
     
     def __getstring__(self, index): 
         return self.artist_string[index], self.title_string[index]
-    
-dataset = ArtDataset()
