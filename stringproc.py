@@ -5,6 +5,8 @@ from collections import Counter
 from torchtext.vocab import Vocab
 import csv
 import pandas as pd
+from transformers import BertTokenizer, BertModel
+import logging
 
 # function: tokenize
 # ---------------------------------------
@@ -14,10 +16,23 @@ import pandas as pd
 # @param text Python array of strings to be tokenized
 #
 # @returns Array of tokenized strings (which are themselves arrays
-def tokenize(text):
-    tokenizer = get_tokenizer("basic_english")
-    tokens_array = [tokenizer(sentence) for sentence in text]
-    return tokens_array
+def tokenize(text, max_length=30):
+    # Load pre-trained model tokenizer (vocabulary)
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    
+    # Tokenize and convert to IDs
+    encoded = tokenizer(text, 
+                        padding=True, 
+                        truncation=True, 
+                        max_length=max_length, 
+                        return_tensors='pt', 
+                        return_attention_mask=True)
+    
+    # Extract the tokenized inputs and attention mask
+    input_ids = encoded['input_ids']  # Token IDs for each sentence
+    attention_mask = encoded['attention_mask']  # Attention mask (1 for real tokens, 0 for padding)
+
+    return input_ids, attention_mask
 
 # function: create_vocab
 # ---------------------------------------------------
@@ -72,7 +87,6 @@ def create_vocab_csv(file_path, column_name):
     # to this index)
     vocab.unk_index = vocab['<unk>']
     return vocab
-create_vocab_csv('art.csv', "Artist")
 
 # function: text_to_tensor
 # -------------------------------------
@@ -82,13 +96,32 @@ create_vocab_csv('art.csv', "Artist")
 #
 # @param text Python array of strings to be converted into token vectors
 #
-# @param vocab Vocabulary object which represents the vocabulary used in the text
-#
-# @param max_len Positive integer representing the point at which we have to cut off each
-# string
-#
+# @param embeddings Dictionary which allows us to look up the vector space embedding of each word 
+# 
+# @param unknown Embedding that we use for unknown words, calculated as the average of all 
+# the embeddings. Calculated separately and passed into the function for efficiency 
+# 
 # @returns PyTorch tensor to be passed into the model representing the text
-def text_to_tensor(text, vocab, max_len):
+def text_to_tensor(text, embeddings, embedding_dim, unknown):
+    # Tokenize the text
     tokenized_text = tokenize(text)
-    token_ids = [[vocab[token] for token in sentence[:max_len]] + [0] * (max_len - len(sentence)) for sentence in tokenized_text]
-    return torch.tensor(token_ids)
+    
+    # Replace tokens with embeddings
+    embedded_text = [[embeddings[token] if token in embeddings else unknown for token in sentence] for sentence in tokenized_text]
+    
+    # Determine the length of each sequence
+    sequence_lengths = [len(sentence) for sentence in embedded_text]
+    
+    # Find the maximum sequence length
+    max_length = max(sequence_lengths)
+    
+    # Pad each sentence with a vector of zeros
+    zero_vector = [0.0] * embedding_dim
+    padded_embedded_text = [
+        sentence + [zero_vector] * (max_length - len(sentence)) for sentence in embedded_text
+    ]
+    
+    # Convert to PyTorch tensors
+    padded_tensor = torch.tensor(padded_embedded_text)
+    lengths_tensor = torch.tensor(sequence_lengths)  
+    return padded_tensor, lengths_tensor
