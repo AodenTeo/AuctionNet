@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 import pandas as pd
 from stringproc import create_vocab_csv, text_to_tensor, tokenize
 import numpy as np
-from torchtext.data.utils import get_tokenizer
+import matplotlib.pyplot as plt
 
 # function: load_glove_embeddings
 # --------------------------------------------
@@ -78,15 +78,22 @@ class ArtDataset(Dataset):
         self.numerics_std = numerics_tensor.std(dim=0)  # store the mean and std for use at test time
         self.numerics = (numerics_tensor - self.numerics_mean) / self.numerics_std
         
+        # set the boundaries for the classification buckets 
+        # Define the boundaries for the categories
+        boundaries = torch.tensor([50, 100, 250, 500, 750, 1000, 5000, 10000, 50000, 100000, 500000, 1000000])
+        
         # extract the prices (target) from the dataframe, and normalize it
         price_tensor = torch.tensor(list(map(float, xy["Real Price USD"].tolist()))).view(-1, 1)
+        self.price_classifier = torch.bucketize(price_tensor, boundaries)     
         self.price_median = price_tensor.median(dim=0)[0]  # normalize to median to adjust for the massive expensive outliers 
         self.price_std = price_tensor.std(dim=0)
         self.price = (price_tensor - self.price_median) / self.price_std
         print("Dataset loaded successfully!")
+        
+
 
     def __getitem__(self, index):
-        return self.artist[index], self.artist_seg_ids[index], self.price[index]
+        return self.artist[index], self.artist_seg_ids[index], self.price[index], self.price_classifier[index]
 
     def __len__(self):
         return self.title.shape[0]
